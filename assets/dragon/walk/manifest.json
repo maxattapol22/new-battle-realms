@@ -1,0 +1,22 @@
+{
+  "meaning": "เดินอยู่กับที่ 8 ทิศ ทุกตัวละคร",
+  "frames": ["00", "01", "02", "03"],
+  "phase": [
+    "contact เท้านำไปข้างหน้า",
+    "passing ขาไขว้",
+    "contact ขาสลับ",
+    "passing ขาอีกข้างไขว้"
+  ],
+  "fps": 8,
+  "loop": true,
+  "canvas": [220, 394],
+  "baseline": 371,
+  "canvas_exceptions": {
+    "leader/n": [224, 394],
+    "leader/nw": [234, 394],
+    "leader/w": [248, 394]
+  },
+  "directions": ["s", "sw", "w", "nw", "n", "ne", "e", "se"],
+  "characters": ["female", "male", "chief", "spear", "archer", "elite", "leader"],
+  "note": "สี่เฟรมวนกลับเฟรมแรก อาวุธอยู่ข้างเดิม ไม่ได้สะท้อนภาพ เท้าอยู่แนวพิกเซล 371"
+}

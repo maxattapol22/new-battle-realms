@@ -2,143 +2,1681 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>New Battle Realms - Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>New Battle Realms</title>
 <style>
-body { margin:0; background:#1a1a1a; color:#fff; font-family:Arial,sans-serif; overflow:hidden; touch-action:none; }
-#gameCanvas { display:block; background:#2d5016; }
-#ui { position:absolute; top:0; left:0; right:0; pointer-events:none; }
-.panel { background:rgba(0,0,0,0.7); padding:8px; margin:5px; border-radius:6px; pointer-events:auto; }
-#resources { position:absolute; top:5px; left:5px; }
-#clanSelect { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
-button { padding:12px 20px; margin:5px; font-size:16px; cursor:pointer; }
-.clan-btn { min-width:140px; }
-#info { position:absolute; bottom:5px; left:5px; font-size:14px; }
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #14210f; color: #fff; font-family: "Leelawadee UI", "Noto Sans Thai", Tahoma, sans-serif; overflow: hidden; touch-action: none; }
+  #gameCanvas { display: block; width: 100%; height: 100%; }
+  #ui { position: absolute; inset: 0; pointer-events: none; }
+  .panel { background: rgba(8, 12, 8, 0.82); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; pointer-events: auto; }
+  #clanSelect { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(520px, calc(100% - 24px)); padding: 18px 16px 14px; text-align: center; }
+  #clanSelect h1 { margin: 0 0 4px; font-size: 26px; }
+  #clanSelect .sub { margin: 0 0 12px; color: #d5dcc8; font-size: 14px; }
+  .clan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .clan-btn { min-height: 76px; border: 0; border-radius: 10px; color: #fff; font: inherit; font-size: 16px; cursor: pointer; text-align: left; padding: 10px 12px; }
+  .clan-btn b { display: block; font-size: 16px; }
+  .clan-btn span { display: block; font-size: 12px; opacity: .9; margin-top: 2px; }
+  #topbar { position: absolute; top: calc(6px + env(safe-area-inset-top)); left: 8px; right: 164px; display: none; gap: 8px; align-items: stretch; pointer-events: none; }
+  #res { padding: 8px 10px; min-width: 0; }
+  #res .row { display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 15px; font-weight: 700; }
+  #res .meta { margin-top: 2px; font-size: 12px; color: #d5dcc8; font-weight: 400; }
+  #dock { position: absolute; left: 0; right: 0; bottom: 0; display: none; pointer-events: none; }
+  #status { position: static; display: block; margin: 0 8px 6px; padding: 6px 10px; font-size: 13px; color: #f3f0d8; pointer-events: none; }
+  #topbar, #res, #toast { pointer-events: none; }
+  #commands { position: static; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); background: rgba(0,0,0,.62); pointer-events: auto; }
+  #commands button { flex: 1 1 68px; min-width: 68px; max-width: 148px; min-height: 48px; padding: 4px 6px; border: 0; border-radius: 8px; background: #2a3848; color: #fff; font: inherit; font-size: 13px; line-height: 1.15; cursor: pointer; }
+  #commands button small { display: block; color: #f6d365; font-size: 11px; }
+  #commands button:disabled { opacity: .38; }
+  #commands button.primary { background: #1e6b3a; }
+  #commands button.wood { background: #6b4423; }
+  #commands button.warn { background: #8a2a2a; }
+  #help, #end { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100% - 24px)); padding: 16px; display: none; text-align: left; }
+  #help h2, #end h2 { margin: 0 0 8px; text-align: center; }
+  #help ol { margin: 0 0 12px; padding-left: 20px; }
+  #help li, #end p { margin: 6px 0; line-height: 1.4; }
+  .row-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  #toast { position: absolute; top: 74px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.8); padding: 8px 12px; border-radius: 8px; display: none; font-size: 14px; max-width: calc(100% - 24px); text-align: center; }
 </style>
 </head>
 <body>
 <canvas id="gameCanvas"></canvas>
 <div id="ui">
   <div id="clanSelect" class="panel">
-    <h2>เลือกเผ่า</h2>
-    <button class="clan-btn" data-clan="dragon">เผ่ามังกร (จีน)</button>
-    <button class="clan-btn" data-clan="tiger">เผ่าเสือ (เกาหลี)</button>
-    <button class="clan-btn" data-clan="eagle">เผ่านกอินทรีย์ (ญี่ปุ่น)</button>
-    <button class="clan-btn" data-clan="elephant">เผ่าช้าง (ไทย)</button>
-    <p>Prototype v0.1 - เล่นบน Chrome มือถือได้</p>
+    <h1>New Battle Realms</h1>
+    <p class="sub">หญิงเก็บข้าวกับน้ำ · ชายตัดไม้สร้างอาคาร · หัวหน้าหมู่บ้านฝึกเป็นหัวหน้านักรบ</p>
+    <div class="clan-grid" id="clanGrid"></div>
   </div>
-  <div id="resources" class="panel" style="display:none;">
-    <div>ข้าว: <span id="rice">0</span> | น้ำ: <span id="water">0</span></div>
-    <div>ประชากร: <span id="pop">0</span></div>
-    <div>เวลา: <span id="time">0:00</span></div>
+  <div id="topbar">
+    <div id="res" class="panel">
+      <div class="row">
+        <span>ข้าว <span id="rice">0</span></span>
+        <span>น้ำ <span id="water">0</span></span>
+        <span>ไม้ <span id="wood">0</span></span>
+        <span>คน <span id="pop">0</span>/<span id="cap">20</span></span>
+        <span id="clock">0:00</span>
+      </div>
+      <div class="meta" id="clanMeta"></div>
+    </div>
   </div>
-  <div id="info" class="panel" style="display:none;">
-    แตะชาวบ้านชาย → เลือกอาคารฝึก | แตะชาวบ้านหญิง → ไปนา/น้ำ
+  <div id="dock">
+    <div id="status" class="panel"></div>
+    <div id="commands"></div>
+  </div>
+  <div id="toast"></div>
+  <div id="help" class="panel">
+    <h2>วิธีเล่น</h2>
+    <ol>
+      <li>กด «ข้าวทั้งหมด» หรือ «น้ำทั้งหมด» ชาวนาหญิงจะเก็บแล้วเดินกลับคลังเอง</li>
+      <li>กด «ไม้ทั้งหมด» ให้ชาวบ้านชายตัดต้นไม้ ไม้ต้องใช้สร้างอาคาร แตะต้นไม้เองก็ได้</li>
+      <li>แตะชาวบ้านชาย แล้วกดสร้างหอฝึก จากนั้นแตะจุดบนแผนที่</li>
+      <li>แต่ละเผ่ามีหัวหน้าหมู่บ้าน 1 คน ส่งเขาเข้าหอฝึกแล้วเขาจะกลายเป็นหัวหน้านักรบ ทหารใกล้เขาจะโจมตีแรงขึ้น</li>
+      <li>แตะหอฝึก แล้วเลือกหน่วย ชาวบ้านชายที่ว่างจะเดินเข้าไปฝึกเป็นทหารธรรมดา</li>
+      <li>กด «เลือกทหาร» แล้วแตะศัตรูหรือพื้นที่เพื่อบุก ลากพื้นที่ว่างเพื่อเลื่อนกล้อง</li>
+      <li>ทำลายศูนย์กลางของศัตรูให้ได้ก่อน</li>
+    </ol>
+    <div class="row-btns"><button type="button" id="helpClose">ปิด</button></div>
+  </div>
+  <div id="end" class="panel">
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="row-btns">
+      <button type="button" id="replay">เล่นเผ่าเดิมอีกครั้ง</button>
+      <button type="button" id="reselect">เลือกเผ่าใหม่</button>
+    </div>
   </div>
 </div>
 <script>
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-let W, H;
-function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-}
-resize();
-window.addEventListener("resize", resize);
+const POP_CAP = 20;
+const MAP_W = 2400;
+const MAP_H = 1600;
 
-const clans = {
-  dragon: { name: "มังกร", color: "#c0392b" },
-  tiger: { name: "เสือ", color: "#2980b9" },
-  eagle: { name: "นกอินทรีย์", color: "#27ae60" },
-  elephant: { name: "ช้าง", color: "#8e44ad" }
+const CLANS = {
+  dragon: {
+    name: "มังกร", region: "จีน", color: "#c0392b", bonus: "ทหารโจมตีแรงขึ้น 20%",
+    mods: { atk: 1.2, spd: 1, hp: 1, def: 1 },
+    units: [
+      { id: "spear", name: "พลหอก", rice: 45, water: 10, hp: 95, atk: 9, range: 26, speed: 64, train: 9 },
+      { id: "archer", name: "พลธนู", rice: 55, water: 20, hp: 60, atk: 8, range: 155, speed: 60, train: 10, ranged: true },
+      { id: "elite", name: "นักรบมังกร", rice: 100, water: 40, hp: 150, atk: 16, range: 24, speed: 58, train: 13 }
+    ],
+    chief: { id: "chief", name: "หัวหน้านักรบ", rice: 40, water: 10, hp: 155, atk: 16, range: 26, speed: 66, train: 10, leader: true }
+  },
+  tiger: {
+    name: "เสือ", region: "เกาหลี", color: "#2471a3", bonus: "หน่วยรับดาเมจลด 15%",
+    mods: { atk: 1, spd: 1, hp: 1, def: 0.85 },
+    units: [
+      { id: "blade", name: "นักดาบ", rice: 50, water: 15, hp: 85, atk: 11, range: 22, speed: 78, train: 9 },
+      { id: "cross", name: "พลหน้าไม้", rice: 60, water: 25, hp: 70, atk: 10, range: 165, speed: 56, train: 10, ranged: true },
+      { id: "guard", name: "ยามเสือ", rice: 95, water: 35, hp: 180, atk: 11, range: 22, speed: 52, train: 13 }
+    ],
+    chief: { id: "chief", name: "หัวหน้านักรบ", rice: 40, water: 10, hp: 190, atk: 14, range: 22, speed: 60, train: 10, leader: true }
+  },
+  eagle: {
+    name: "นกอินทรีย์", region: "ญี่ปุ่น", color: "#1e8449", bonus: "ทหารเคลื่อนที่เร็วขึ้น 25%",
+    mods: { atk: 1, spd: 1.25, hp: 1, def: 1 },
+    units: [
+      { id: "ashi", name: "อาชิการุ", rice: 40, water: 10, hp: 80, atk: 8, range: 28, speed: 66, train: 8 },
+      { id: "yumi", name: "พลธนู", rice: 50, water: 20, hp: 55, atk: 7, range: 160, speed: 64, train: 9, ranged: true },
+      { id: "samurai", name: "ซามูไร", rice: 100, water: 35, hp: 130, atk: 17, range: 22, speed: 62, train: 13 }
+    ],
+    chief: { id: "chief", name: "หัวหน้านักรบ", rice: 40, water: 10, hp: 135, atk: 15, range: 24, speed: 78, train: 10, leader: true }
+  },
+  elephant: {
+    name: "ช้าง", region: "ไทย", color: "#7d3c98", bonus: "พลังชีวิตทหารเพิ่ม 25%",
+    mods: { atk: 1, spd: 1, hp: 1.25, def: 1 },
+    units: [
+      { id: "warrior", name: "ทหารดาบ", rice: 45, water: 10, hp: 100, atk: 10, range: 22, speed: 60, train: 9 },
+      { id: "cross", name: "พลหน้าไม้", rice: 55, water: 20, hp: 65, atk: 9, range: 155, speed: 58, train: 10, ranged: true },
+      { id: "elephant", name: "ช้างศึก", rice: 150, water: 60, hp: 280, atk: 20, range: 34, speed: 40, train: 16, siege: 2.6, radius: 18 }
+    ],
+    chief: { id: "chief", name: "หัวหน้านักรบ", rice: 40, water: 10, hp: 210, atk: 16, range: 28, speed: 54, train: 11, siege: 1.5, leader: true }
+  }
 };
 
-let game = { running: false, playerClan: null, rice: 100, water: 50, units: [], buildings: [], resources: [], time: 0, selected: null };
+const BUILDINGS = {
+  town: { name: "ศูนย์กลาง", w: 78, h: 70, hp: 900, train: 0 },
+  dojo: { name: "หอฝึก", w: 68, h: 60, hp: 480, rice: 100, water: 40, wood: 50, build: 12 },
+  granary: { name: "ยุ้งข้าว", w: 56, h: 48, hp: 300, rice: 40, water: 0, wood: 30, build: 8 },
+  well: { name: "บ่อน้ำ", w: 48, h: 48, hp: 260, rice: 20, water: 25, wood: 20, build: 8 }
+};
 
-function startGame(clanKey) {
-  game.playerClan = clans[clanKey];
-  game.running = true;
-  document.getElementById("clanSelect").style.display = "none";
-  document.getElementById("resources").style.display = "block";
-  document.getElementById("info").style.display = "block";
-  for (let i = 0; i < 3; i++) {
-    game.units.push(createVillager(true, 100 + i*30, 200));
-    game.units.push(createVillager(false, 100 + i*30, 250));
-  }
-  game.resources.push({x: 300, y: 150, type: "rice", amount: 500});
-  game.resources.push({x: 400, y: 300, type: "water", amount: 300});
-  game.buildings.push({x: 150, y: 180, type: "town", owner: "player", hp: 500});
-  game.buildings.push({x: W-200, y: H-200, type: "town", owner: "ai", hp: 500});
+const PEASANT_COST = {
+  female: { rice: 40, water: 0, dur: 8 },
+  male: { rice: 35, water: 10, dur: 8 }
+};
+
+const ui = {
+  clanSelect: document.getElementById("clanSelect"),
+  clanGrid: document.getElementById("clanGrid"),
+  topbar: document.getElementById("topbar"),
+  status: document.getElementById("status"),
+  commands: document.getElementById("commands"),
+  dock: document.getElementById("dock"),
+  help: document.getElementById("help"),
+  end: document.getElementById("end"),
+  endTitle: document.getElementById("endTitle"),
+  endText: document.getElementById("endText"),
+  toast: document.getElementById("toast"),
+  rice: document.getElementById("rice"),
+  water: document.getElementById("water"),
+  wood: document.getElementById("wood"),
+  pop: document.getElementById("pop"),
+  cap: document.getElementById("cap"),
+  clock: document.getElementById("clock"),
+  clanMeta: document.getElementById("clanMeta")
+};
+
+let W = 360, H = 640, dpr = 1;
+const cam = { x: 0, y: 0 };
+let toastTimer = 0;
+let uiSig = "";
+
+const game = {
+  running: false,
+  over: null,
+  time: 0,
+  nextId: 1,
+  playerKey: null,
+  aiKey: null,
+  stock: { player: { rice: 0, water: 0, wood: 0 }, ai: { rice: 0, water: 0, wood: 0 } },
+  units: [],
+  buildings: [],
+  nodes: [],
+  trees: [],
+  shots: [],
+  floats: [],
+  selUnits: [],
+  selBuilding: null,
+  trainMaleId: null,
+  mode: "play",
+  placeKind: null,
+  rallyFor: null,
+  aiAttack: false,
+  aiTimer: 0,
+  hudTimer: 0
+};
+
+function id() { return game.nextId++; }
+function clanOf(owner) { return CLANS[owner === "player" ? game.playerKey : game.aiKey]; }
+function stockOf(owner) { return game.stock[owner]; }
+function getUnit(uid) { return game.units.find(u => u.id === uid) || null; }
+function getBuilding(bid) { return game.buildings.find(b => b.id === bid) || null; }
+function getNode(nid) { return game.nodes.find(n => n.id === nid) || null; }
+
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = Math.floor(W * dpr);
+  canvas.height = Math.floor(H * dpr);
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+  clampCam();
+}
+window.addEventListener("resize", resize);
+resize();
+
+function clampCam() {
+  cam.x = Math.max(0, Math.min(cam.x, Math.max(0, MAP_W - W)));
+  cam.y = Math.max(0, Math.min(cam.y, Math.max(0, MAP_H - H)));
+}
+function focusCam(x, y) {
+  cam.x = x - W / 2;
+  cam.y = y - H / 2;
+  clampCam();
+}
+function screenToWorld(sx, sy) { return { x: sx + cam.x, y: sy + cam.y }; }
+
+function toast(msg) {
+  if (!ui.toast) return;
+  ui.toast.textContent = msg;
+  ui.toast.style.display = "block";
+  toastTimer = 2.2;
 }
 
-function createVillager(isFemale, x, y, owner = "player") {
-  return { x, y, owner, isFemale, hp: 50, speed: isFemale ? 1.2 : 1.5, target: null };
+function popUsed(owner) {
+  let n = game.units.filter(u => u.owner === owner).length;
+  for (const b of game.buildings) if (b.owner === owner && b.training) n++;
+  return n;
+}
+function canAfford(owner, cost) {
+  const s = stockOf(owner);
+  return s.rice >= (cost.rice || 0) && s.water >= (cost.water || 0) && s.wood >= (cost.wood || 0);
+}
+function pay(owner, cost) {
+  if (!canAfford(owner, cost)) return false;
+  const s = stockOf(owner);
+  s.rice -= cost.rice || 0;
+  s.water -= cost.water || 0;
+  s.wood -= cost.wood || 0;
+  return true;
+}
+function refund(owner, cost) {
+  if (!cost) return;
+  const s = stockOf(owner);
+  s.rice += cost.rice || 0;
+  s.water += cost.water || 0;
+  s.wood += cost.wood || 0;
+}
+function costText(cost) {
+  const bits = [];
+  if (cost.rice) bits.push("ข้าว " + cost.rice);
+  if (cost.water) bits.push("น้ำ " + cost.water);
+  if (cost.wood) bits.push("ไม้ " + cost.wood);
+  return bits.join(" ");
+}
+
+function isLaborer(u) { return !!(u && (u.role === "male" || u.role === "chief")); }
+function makeChief(owner, x, y) {
+  return {
+    id: id(), owner, role: "chief", name: "หัวหน้าหมู่บ้าน",
+    x, y, hp: 72, maxHp: 72, speed: 70, radius: 11,
+    atk: 5, range: 22, cooldown: 1, cd: 0, siege: 1, ranged: false,
+    order: null, carryRice: 0, carryWater: 0, carryWood: 0, carryMax: 8, facing: 0
+  };
+}
+function makePeasant(owner, female, x, y) {
+  const hp = female ? 42 : 54;
+  return {
+    id: id(), owner, role: female ? "female" : "male", name: female ? "ชาวนา" : "ชาวบ้านชาย",
+    x, y, hp, maxHp: hp, speed: female ? 68 : 72, radius: female ? 8 : 9,
+    atk: female ? 0 : 4, range: 20, cooldown: 1, cd: 0, siege: 1, ranged: false,
+    order: null, carryRice: 0, carryWater: 0, carryWood: 0, carryMax: female ? 10 : 8, facing: 0
+  };
+}
+function makeSoldier(owner, def, x, y) {
+  const mods = clanOf(owner).mods;
+  const hp = Math.round(def.hp * mods.hp);
+  return {
+    id: id(), owner, role: "soldier", unitId: def.id, name: def.leader ? "หัวหน้านักรบ" : def.name,
+    leader: !!def.leader,
+    x, y, hp, maxHp: hp, speed: def.speed * mods.spd, radius: def.leader ? 12 : (def.radius || 10),
+    atk: Math.max(1, Math.round(def.atk * mods.atk)), range: def.range,
+    cooldown: def.ranged ? 1.3 : 1.05, cd: 0, siege: def.siege || 1, ranged: !!def.ranged,
+    order: null, carryRice: 0, carryWater: 0, carryWood: 0, carryMax: 0, facing: 0
+  };
+}
+function makeBuilding(owner, kind, x, y, done) {
+  const def = BUILDINGS[kind];
+  return {
+    id: id(), owner, kind, name: def.name, x, y, w: def.w, h: def.h,
+    hp: done ? def.hp : Math.round(def.hp * 0.2), maxHp: def.hp,
+    done: !!done, progress: done ? 1 : 0, buildTime: def.build || 8,
+    training: null, rally: { x: x + (owner === "player" ? 70 : -70), y: y + 10 }
+  };
+}
+
+function nearestNode(x, y, type) {
+  let best = null, bestD = 1e9;
+  for (const n of game.nodes) {
+    if (n.amount <= 0) continue;
+    if (type && n.type !== type) continue;
+    const d = Math.hypot(n.x - x, n.y - y);
+    if (d < bestD) { best = n; bestD = d; }
+  }
+  return best;
+}
+function nearestDropoff(owner, x, y) {
+  let best = null, bestD = 1e9;
+  for (const b of game.buildings) {
+    if (b.owner !== owner || !b.done) continue;
+    if (b.kind !== "town" && b.kind !== "granary" && b.kind !== "well") continue;
+    const d = Math.hypot(b.x - x, b.y - y);
+    if (d < bestD) { best = b; bestD = d; }
+  }
+  return best;
+}
+function nearestIdleMale(owner, x, y) {
+  let best = null, bestD = 1e9;
+  for (const u of game.units) {
+    if (u.owner !== owner || u.role !== "male") continue;
+    if (u.order && u.order.type !== "move") continue;
+    const d = Math.hypot(u.x - x, u.y - y);
+    if (d < bestD) { best = u; bestD = d; }
+  }
+  return best;
+}
+function buildingAt(x, y) {
+  for (let i = game.buildings.length - 1; i >= 0; i--) {
+    const b = game.buildings[i];
+    if (Math.abs(x - b.x) <= b.w / 2 + 6 && Math.abs(y - b.y) <= b.h / 2 + 6) return b;
+  }
+  return null;
+}
+function unitAt(x, y, owner) {
+  let best = null, bestD = 1e9;
+  for (const u of game.units) {
+    if (owner && u.owner !== owner) continue;
+    const d = Math.hypot(u.x - x, u.y - y);
+    if (d <= u.radius + 10 && d < bestD) { best = u; bestD = d; }
+  }
+  return best;
+}
+function placeValid(kind, x, y) {
+  const def = BUILDINGS[kind];
+  if (x < 40 || y < 40 || x > MAP_W - 40 || y > MAP_H - 40) return false;
+  for (const b of game.buildings) {
+    const gap = def.w / 2 + b.w / 2 + 10;
+    if (Math.abs(b.x - x) < gap && Math.abs(b.y - y) < (def.h / 2 + b.h / 2 + 10)) return false;
+  }
+  for (const t of game.trees) {
+    if (t.wood > 0 && Math.hypot(t.x - x, t.y - y) < t.r + Math.max(def.w, def.h) / 2) return false;
+  }
+  return true;
+}
+
+function releasePaidOrder(u) {
+  const order = u.order;
+  if (!order || order.type !== "train" || !order.cost) return;
+  refund(u.owner, order.cost);
+  const b = getBuilding(order.buildingId);
+  if (b && b.reservedBy === u.id) b.reservedBy = null;
+  order.cost = null;
+}
+function setOrder(u, order) {
+  releasePaidOrder(u);
+  if (!order) { u.order = null; return; }
+  const carrying = u.carryRice > 0 || u.carryWater > 0 || u.carryWood > 0;
+  if (carrying && order.type !== "drop" && order.type !== "gather" && order.type !== "chop") u.order = { type: "drop", next: order };
+  else u.order = order;
+}
+function orderGather(u, res, nodeId) {
+  if (u.role !== "female") return;
+  u.order = { type: "gather", res, nodeId: nodeId || null, phase: "goto" };
+}
+function orderChop(u, treeId) {
+  if (!isLaborer(u)) return;
+  setOrder(u, { type: "chop", treeId: treeId || null });
+}
+function orderAllMalesChop() {
+  let n = 0;
+  for (const u of game.units) {
+    if (u.owner !== "player" || u.role !== "male") continue;
+    if (u.order && (u.order.type === "build" || u.order.type === "train")) continue;
+    orderChop(u);
+    n++;
+  }
+  if (!n) toast("ไม่มีชาวบ้านชายว่าง");
+}
+function orderAllFemales(res) {
+  let n = 0;
+  for (const u of game.units) if (u.owner === "player" && u.role === "female") { orderGather(u, res); n++; }
+  if (!n) toast("ยังไม่มีชาวนาหญิง");
+}
+function selectedUnits() {
+  return game.selUnits.map(getUnit).filter(Boolean);
+}
+function clearSelection() {
+  game.selUnits = [];
+  game.selBuilding = null;
+  game.trainMaleId = null;
+}
+function selectUnits(list) {
+  game.selBuilding = null;
+  game.trainMaleId = null;
+  game.selUnits = list.map(u => u.id);
+  game.mode = "play";
+}
+
+function startTrainPeasant(building, female) {
+  if (!building || building.kind !== "town" || !building.done || building.training) return false;
+  if (popUsed(building.owner) >= POP_CAP) { if (building.owner === "player") toast("ประชากรเต็ม"); return false; }
+  const cost = female ? PEASANT_COST.female : PEASANT_COST.male;
+  if (!pay(building.owner, cost)) { if (building.owner === "player") toast("ทรัพยากรไม่พอ"); return false; }
+  building.training = { kind: "peasant", female, t: 0, dur: cost.dur, cost: { rice: cost.rice, water: cost.water } };
+  return true;
+}
+function say(owner, msg) { if (owner === "player") toast(msg); }
+function startTrainSoldier(dojo, male, def) {
+  const owner = dojo ? dojo.owner : "player";
+  if (!dojo || dojo.kind !== "dojo" || !dojo.done || dojo.training) { say(owner, "หอฝึกยังไม่ว่าง"); return false; }
+  if (!male || male.role !== "male" || male.owner !== dojo.owner) { say(owner, "ต้องมีชาวบ้านชายว่าง"); return false; }
+  if (dojo.reservedBy && dojo.reservedBy !== male.id) { say(owner, "หอฝึกยังไม่ว่าง"); return false; }
+  if (popUsed(dojo.owner) >= POP_CAP) { say(owner, "ประชากรเต็ม"); return false; }
+  const cost = { rice: def.rice, water: def.water };
+  if (!pay(dojo.owner, cost)) { say(owner, "ทรัพยากรไม่พอ"); return false; }
+  setOrder(male, { type: "train", buildingId: dojo.id, unitId: def.id, cost });
+  dojo.reservedBy = male.id;
+  return true;
+}
+function startTrainChief(dojo, chief) {
+  const owner = dojo ? dojo.owner : "player";
+  if (!dojo || dojo.kind !== "dojo" || !dojo.done || dojo.training) { say(owner, "หอฝึกยังไม่ว่าง"); return false; }
+  if (!chief || chief.role !== "chief" || chief.owner !== owner) { say(owner, "หัวหน้าหมู่บ้านไม่อยู่แล้ว"); return false; }
+  if (dojo.reservedBy && dojo.reservedBy !== chief.id) { say(owner, "หอฝึกยังไม่ว่าง"); return false; }
+  const def = clanOf(owner).chief;
+  const cost = { rice: def.rice, water: def.water };
+  if (!pay(owner, cost)) { say(owner, "ทรัพยากรไม่พอสำหรับฝึกหัวหน้า"); return false; }
+  setOrder(chief, { type: "train", buildingId: dojo.id, unitId: "chief", cost });
+  dojo.reservedBy = chief.id;
+  if (owner === "player") toast("หัวหน้าหมู่บ้านกำลังเข้าหอฝึก");
+  return true;
+}
+function beginBuild(male, kind, x, y) {
+  if (!isLaborer(male)) { say(male && male.owner, "เลือกชาวบ้านชายหรือหัวหน้าก่อน"); return false; }
+  const def = BUILDINGS[kind];
+  if (!placeValid(kind, x, y)) { say(male.owner, "วางตรงนี้ไม่ได้"); return false; }
+  const cost = { rice: def.rice || 0, water: def.water || 0, wood: def.wood || 0 };
+  if (!pay(male.owner, cost)) {
+    const missingWood = (def.wood || 0) > stockOf(male.owner).wood;
+    say(male.owner, missingWood ? "ไม้ไม่พอ ให้ชายไปตัดต้นไม้" : "ทรัพยากรไม่พอ");
+    return false;
+  }
+  const b = makeBuilding(male.owner, kind, x, y, false);
+  b.cost = cost;
+  game.buildings.push(b);
+  setOrder(male, { type: "build", buildingId: b.id });
+  game.mode = "play";
+  game.placeKind = null;
+  if (male.owner === "player") selectUnits([male]);
+  return true;
+}
+
+function spawnFromTraining(b) {
+  const tr = b.training;
+  b.training = null;
+  if (!tr) return;
+  const x = b.rally.x, y = b.rally.y;
+  if (tr.kind === "peasant") {
+    game.units.push(makePeasant(b.owner, tr.female, x, y));
+    return;
+  }
+  const clan = clanOf(b.owner);
+  const def = tr.unitId === "chief" ? clan.chief : clan.units.find(u => u.id === tr.unitId);
+  if (!def) { refund(b.owner, tr.cost); return; }
+  const soldier = makeSoldier(b.owner, def, x, y);
+  game.units.push(soldier);
+  if (b.owner === "ai" && game.aiAttack) soldier.order = { type: "attackmove", x: playerTownPos().x, y: playerTownPos().y };
+}
+
+function playerTownPos() {
+  const t = game.buildings.find(b => b.owner === "player" && b.kind === "town");
+  return t ? { x: t.x, y: t.y } : { x: 340, y: 1240 };
+}
+function aiTownPos() {
+  const t = game.buildings.find(b => b.owner === "ai" && b.kind === "town");
+  return t ? { x: t.x, y: t.y } : { x: 2060, y: 360 };
+}
+
+function addNode(type, x, y, amount) {
+  game.nodes.push({ id: id(), type, x, y, amount, max: amount });
+}
+
+function startGame(clanKey, aiKey) {
+  if (!CLANS[clanKey]) return;
+  const others = Object.keys(CLANS).filter(k => k !== clanKey);
+  if (!aiKey || !CLANS[aiKey] || aiKey === clanKey) aiKey = others[Math.floor(Math.random() * others.length)];
+  game.running = true;
+  game.over = null;
+  game.time = 0;
+  game.nextId = 1;
+  game.playerKey = clanKey;
+  game.aiKey = aiKey;
+  game.stock.player.rice = 80;
+  game.stock.player.water = 40;
+  game.stock.player.wood = 0;
+  game.stock.ai.rice = 80;
+  game.stock.ai.water = 40;
+  game.stock.ai.wood = 0;
+  game.units = [];
+  game.buildings = [];
+  game.nodes = [];
+  game.trees = [];
+  game.shots = [];
+  game.floats = [];
+  game.selUnits = [];
+  game.selBuilding = null;
+  game.trainMaleId = null;
+  game.mode = "play";
+  game.placeKind = null;
+  game.aiAttack = false;
+  game.aiTimer = 0.5;
+  game.hudTimer = 0;
+  uiSig = "";
+
+  const ptc = makeBuilding("player", "town", 340, 1240, true);
+  const atc = makeBuilding("ai", "town", 2060, 360, true);
+  game.buildings.push(ptc, atc);
+  for (let i = 0; i < 3; i++) game.units.push(makePeasant("player", true, 250 + i * 28, 1160));
+  for (let i = 0; i < 2; i++) game.units.push(makePeasant("player", false, 260 + i * 30, 1310));
+  game.units.push(makeChief("player", 400, 1240));
+  for (let i = 0; i < 3; i++) game.units.push(makePeasant("ai", true, 1980 + i * 28, 300));
+  for (let i = 0; i < 2; i++) game.units.push(makePeasant("ai", false, 1960 + i * 30, 450));
+  game.units.push(makeChief("ai", 2000, 360));
+
+  addNode("rice", 560, 1160, 2200);
+  addNode("rice", 720, 1380, 1800);
+  addNode("water", 220, 980, 1600);
+  addNode("rice", 1840, 470, 2200);
+  addNode("rice", 1680, 250, 1800);
+  addNode("water", 2180, 560, 1600);
+  addNode("rice", 1180, 820, 2600);
+  addNode("water", 1340, 700, 1800);
+
+  game.trees = makeTrees();
+  focusCam(ptc.x, ptc.y);
+  if (ui.clanSelect) ui.clanSelect.style.display = "none";
+  if (ui.topbar) ui.topbar.style.display = "block";
+  if (ui.dock) ui.dock.style.display = "block";
+  if (ui.end) ui.end.style.display = "none";
+  if (ui.help) ui.help.style.display = "none";
+  const pc = CLANS[clanKey], ac = CLANS[aiKey];
+  if (ui.clanMeta) ui.clanMeta.textContent = "เรา: เผ่า" + pc.name + " (" + pc.region + ") · " + pc.bonus + "    ศัตรู: เผ่า" + ac.name;
+  toast("หัวหน้าหมู่บ้านมีวงทอง ส่งเขาเข้าหอฝึกเพื่อเป็นหัวหน้านักรบ");
+  refreshHud(true);
+}
+
+function makeTrees() {
+  const list = [];
+  const groves = [
+    [400, 1380], [470, 1460], [540, 1388], [360, 1488], [610, 1450], [500, 1540],
+    [1900, 220], [1980, 150], [1820, 250], [2060, 200], [1740, 180], [1930, 300]
+  ];
+  for (const [x, y] of groves) list.push({ id: id(), x, y, r: 14, wood: 120, max: 120 });
+  const rand = mulberry(42);
+  let guard = 0;
+  while (list.length < 42 && guard < 500) {
+    guard++;
+    const x = 80 + rand() * (MAP_W - 160);
+    const y = 80 + rand() * (MAP_H - 160);
+    if (Math.hypot(x - 340, y - 1240) < 110 || Math.hypot(x - 2060, y - 360) < 110) continue;
+    if (list.some(t => Math.hypot(t.x - x, t.y - y) < 56)) continue;
+    const wood = 100;
+    list.push({ id: id(), x, y, r: 11 + rand() * 7, wood, max: wood });
+  }
+  return list;
+}
+function mulberry(seed) {
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return function () {
+    s = s * 16807 % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+function moveToward(u, x, y, dt, stop) {
+  const dx = x - u.x, dy = y - u.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist <= stop) return true;
+  const step = Math.min(u.speed * dt, dist);
+  u.x += dx / dist * step;
+  u.y += dy / dist * step;
+  u.facing = Math.atan2(dy, dx);
+  return false;
+}
+function clampUnit(u) {
+  u.x = Math.max(12, Math.min(MAP_W - 12, u.x));
+  u.y = Math.max(12, Math.min(MAP_H - 12, u.y));
+}
+
+function distUnit(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function distPointToBuilding(x, y, b) {
+  const cx = Math.max(b.x - b.w / 2, Math.min(x, b.x + b.w / 2));
+  const cy = Math.max(b.y - b.h / 2, Math.min(y, b.y + b.h / 2));
+  return Math.hypot(x - cx, y - cy);
+}
+function nearestEnemyUnit(owner, x, y, radius) {
+  let best = null, bestD = radius;
+  for (const u of game.units) {
+    if (u.owner === owner || u.hp <= 0) continue;
+    const d = Math.hypot(u.x - x, u.y - y);
+    if (d < bestD) { best = u; bestD = d; }
+  }
+  return best;
+}
+function nearestEnemyBuilding(owner, x, y) {
+  let best = null, bestD = 1e9;
+  for (const b of game.buildings) {
+    if (b.owner === owner || b.hp <= 0) continue;
+    const d = Math.hypot(b.x - x, b.y - y);
+    if (d < bestD) { best = b; bestD = d; }
+  }
+  return best;
+}
+
+function dealDamage(target, amount) {
+  if (!target || target.hp <= 0) return;
+  let dmg = amount;
+  if (target.role) dmg *= clanOf(target.owner).mods.def;
+  target.hp -= dmg;
+  game.floats.push({ x: target.x, y: (target.y || 0) - (target.radius || target.h / 2) - 8, text: String(Math.max(1, Math.round(dmg))), life: 0.7 });
+  if (game.floats.length > 48) game.floats.splice(0, game.floats.length - 48);
+}
+
+function fireShot(u, target) {
+  const dx = target.x - u.x, dy = target.y - u.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  const speed = 280;
+  game.shots.push({
+    x: u.x, y: u.y, vx: dx / dist * speed, vy: dy / dist * speed,
+    dmg: u.atk, owner: u.owner, siege: u.siege, life: 1.4,
+    tx: target.x, ty: target.y, targetId: target.id, targetKind: target.role ? "unit" : "building"
+  });
+}
+
+function updateUnit(u, dt) {
+  if (u.hp <= 0) return;
+  if (u.cd > 0) u.cd -= dt;
+  const order = u.order;
+  if (!order) {
+    if (u.role === "soldier") idleAggro(u);
+    return;
+  }
+  if (order.type === "move") {
+    if (moveToward(u, order.x, order.y, dt, 6)) u.order = null;
+    return;
+  }
+  if (order.type === "drop") {
+    const drop = nearestDropoff(u.owner, u.x, u.y);
+    if (!drop) {
+      u.carryRice = 0; u.carryWater = 0; u.carryWood = 0;
+      u.order = order.next || null;
+      return;
+    }
+    if (moveToward(u, drop.x, drop.y, dt, 36)) {
+      const stock = stockOf(u.owner);
+      stock.rice += u.carryRice;
+      stock.water += u.carryWater;
+      stock.wood += u.carryWood;
+      u.carryRice = 0;
+      u.carryWater = 0;
+      u.carryWood = 0;
+      u.order = order.next || null;
+    }
+    return;
+  }
+  if (order.type === "gather") {
+    updateGather(u, order, dt);
+    return;
+  }
+  if (order.type === "chop") {
+    updateChop(u, order, dt);
+    return;
+  }
+  if (order.type === "build") {
+    const b = getBuilding(order.buildingId);
+    if (!b || b.hp <= 0) { u.order = null; return; }
+    if (b.done) { u.order = null; return; }
+    const stop = Math.max(b.w, b.h) / 2 + 8;
+    if (!moveToward(u, b.x, b.y, dt, stop)) return;
+    b.progress += dt / b.buildTime;
+    b.hp = Math.min(b.maxHp, b.maxHp * Math.max(0.2, b.progress));
+    if (b.progress >= 1) {
+      b.progress = 1;
+      b.done = true;
+      b.hp = b.maxHp;
+      u.order = null;
+      if (u.owner === "player") toast(b.name + "สร้างเสร็จ");
+    }
+    return;
+  }
+  if (order.type === "train") {
+    const b = getBuilding(order.buildingId);
+    if (!b || b.hp <= 0 || !b.done) { setOrder(u, null); return; }
+    if (b.training && b.training.maleId !== u.id) {
+      if (moveToward(u, b.x, b.y + b.h, dt, 40)) setOrder(u, null);
+      return;
+    }
+    const stop = Math.max(b.w, b.h) / 2 + 4;
+    if (!moveToward(u, b.x, b.y, dt, stop)) return;
+    const clan = clanOf(u.owner);
+    const def = order.unitId === "chief" ? clan.chief : clan.units.find(d => d.id === order.unitId);
+    const cost = order.cost;
+    order.cost = null;
+    b.reservedBy = null;
+    b.training = { kind: order.unitId === "chief" ? "chief" : "soldier", unitId: order.unitId, t: 0, dur: def ? def.train : 10, cost, maleId: u.id };
+    u.order = null;
+    u.hp = 0;
+    return;
+  }
+  if (order.type === "attack") {
+    updateAttack(u, order, dt);
+    return;
+  }
+  if (order.type === "attackmove") {
+    const foe = nearestEnemyUnit(u.owner, u.x, u.y, 130);
+    if (foe && Math.hypot(foe.x - order.x, foe.y - order.y) < 280) {
+      updateAttack(u, { type: "attack", targetKind: "unit", targetId: foe.id }, dt);
+      return;
+    }
+    if (moveToward(u, order.x, order.y, dt, 12)) {
+      const b = nearestEnemyBuilding(u.owner, u.x, u.y);
+      if (b && Math.hypot(b.x - order.x, b.y - order.y) < 220) u.order = { type: "attack", targetKind: "building", targetId: b.id };
+      else u.order = null;
+    }
+  }
+}
+
+function updateGather(u, order, dt) {
+  let node = order.nodeId ? getNode(order.nodeId) : null;
+  if (!node || node.amount <= 0 || (node.type !== order.res)) {
+    node = nearestNode(u.x, u.y, order.res);
+    order.nodeId = node ? node.id : null;
+  }
+  if ((!node || node.amount <= 0) && u.carryRice + u.carryWater > 0) {
+    u.order = { type: "drop", next: { type: "gather", res: order.res, nodeId: null, phase: "goto" } };
+    return;
+  }
+  if (!node) { u.order = null; return; }
+  if (u.carryRice + u.carryWater >= u.carryMax) {
+    u.order = { type: "drop", next: { type: "gather", res: order.res, nodeId: order.nodeId, phase: "goto" } };
+    return;
+  }
+  if (!moveToward(u, node.x, node.y, dt, 20)) return;
+  order.tick = (order.tick || 0) + dt;
+  const interval = u.owner === "ai" ? 0.48 : 0.35;
+  if (order.tick >= interval) {
+    order.tick = 0;
+    const take = Math.min(1, node.amount);
+    node.amount -= take;
+    if (node.type === "rice") u.carryRice += take;
+    else u.carryWater += take;
+  }
+}
+
+function nearestTree(x, y) {
+  let best = null, bestD = 1e9;
+  for (const t of game.trees) {
+    if (t.wood <= 0) continue;
+    const d = Math.hypot(t.x - x, t.y - y);
+    if (d < bestD) { best = t; bestD = d; }
+  }
+  return best;
+}
+function treeAt(x, y) {
+  let best = null, bestD = 1e9;
+  for (const t of game.trees) {
+    if (t.wood <= 0) continue;
+    const d = Math.hypot(t.x - x, t.y - y);
+    if (d <= t.r + 12 && d < bestD) { best = t; bestD = d; }
+  }
+  return best;
+}
+function updateChop(u, order, dt) {
+  let tree = order.treeId ? game.trees.find(t => t.id === order.treeId) : null;
+  if (!tree || tree.wood <= 0) {
+    tree = nearestTree(u.x, u.y);
+    order.treeId = tree ? tree.id : null;
+  }
+  if ((!tree || tree.wood <= 0) && u.carryWood > 0) {
+    u.order = { type: "drop", next: { type: "chop", treeId: null } };
+    return;
+  }
+  if (!tree) { u.order = null; return; }
+  if (u.carryWood >= u.carryMax) {
+    u.order = { type: "drop", next: { type: "chop", treeId: order.treeId } };
+    return;
+  }
+  if (!moveToward(u, tree.x, tree.y, dt, tree.r + 8)) return;
+  order.tick = (order.tick || 0) + dt;
+  const interval = u.owner === "ai" ? 0.5 : 0.4;
+  if (order.tick < interval) return;
+  order.tick = 0;
+  const take = Math.min(1, tree.wood);
+  tree.wood -= take;
+  u.carryWood += take;
+}
+function isChopping(u) {
+  if (!u.order) return false;
+  if (u.order.type === "chop") return true;
+  return u.order.type === "drop" && u.order.next && u.order.next.type === "chop";
+}
+function assignWoodcutters(owner) {
+  const dojoStanding = game.buildings.some(b => b.owner === owner && b.kind === "dojo" && b.hp > 0);
+  const goal = dojoStanding ? 0 : (BUILDINGS.dojo.wood || 0);
+  const wantChop = stockOf(owner).wood < goal;
+  for (const m of game.units) {
+    if (m.owner !== owner || m.role !== "male") continue;
+    if (m.order && (m.order.type === "build" || m.order.type === "train")) continue;
+    const carrying = m.carryWood > 0 || m.carryRice > 0 || m.carryWater > 0;
+    if (wantChop) {
+      if (!isChopping(m)) orderChop(m);
+    } else if (isChopping(m) && !carrying) {
+      setOrder(m, null);
+    }
+  }
+}
+
+function allyAura(u) {
+  if (!u || u.leader) return 1;
+  for (const other of game.units) {
+    if (other.leader && other.owner === u.owner && other.hp > 0 && Math.hypot(other.x - u.x, other.y - u.y) < 120) return 1.15;
+  }
+  return 1;
+}
+function idleAggro(u) {
+  const foe = nearestEnemyUnit(u.owner, u.x, u.y, 150);
+  if (foe) u.order = { type: "attack", targetKind: "unit", targetId: foe.id };
+}
+
+function updateAttack(u, order, dt) {
+  const target = order.targetKind === "building" ? getBuilding(order.targetId) : getUnit(order.targetId);
+  if (!target || target.hp <= 0) { u.order = null; return; }
+  const dist = target.role ? distUnit(u, target) : distPointToBuilding(u.x, u.y, target);
+  u.facing = Math.atan2(target.y - u.y, target.x - u.x);
+  if (dist > u.range) {
+    moveToward(u, target.x, target.y, dt, u.range);
+    return;
+  }
+  if (u.cd > 0 || u.atk <= 0) return;
+  u.cd = u.cooldown;
+  let dmg = u.atk * allyAura(u);
+  if (!target.role) dmg *= u.siege || 1;
+  if (u.ranged) fireShot(u, target);
+  else dealDamage(target, dmg);
+}
+
+function updateShots(dt) {
+  for (const s of game.shots) {
+    let gx = s.tx, gy = s.ty;
+    const target = s.targetKind === "building" ? getBuilding(s.targetId) : getUnit(s.targetId);
+    if (target && target.hp > 0) { gx = target.x; gy = target.y; }
+    const dx = gx - s.x, dy = gy - s.y;
+    const dist = Math.hypot(dx, dy);
+    const step = 280 * dt;
+    if (dist <= step + 8) {
+      if (target && target.hp > 0) {
+        let dmg = s.dmg;
+        if (!target.role) dmg *= s.siege || 1;
+        dealDamage(target, dmg);
+      }
+      s.life = 0;
+    } else {
+      s.x += dx / dist * step;
+      s.y += dy / dist * step;
+      s.life -= dt;
+    }
+  }
+  game.shots = game.shots.filter(s => s.life > 0);
+}
+
+function separate(dt) {
+  const list = game.units;
+  for (let i = 0; i < list.length; i++) {
+    for (let j = i + 1; j < list.length; j++) {
+      const a = list[i], b = list[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      let d = Math.hypot(dx, dy);
+      const min = a.radius + b.radius - 1;
+      if (d >= min) continue;
+      if (d < 0.01) { a.x -= 0.4; b.x += 0.4; continue; }
+      const push = (min - d) * 0.5;
+      a.x -= dx / d * push;
+      a.y -= dy / d * push;
+      b.x += dx / d * push;
+      b.y += dy / d * push;
+    }
+    clampUnit(list[i]);
+  }
+}
+
+function destroyBuildings() {
+  for (const u of game.units) if (u.hp <= 0) releasePaidOrder(u);
+  for (const b of game.buildings) {
+    if (b.hp > 0 || b.dead) continue;
+    b.dead = true;
+    if (b.training) refund(b.owner, b.training.cost);
+    if (!b.done && b.cost) refund(b.owner, {
+      rice: Math.floor((b.cost.rice || 0) * 0.5),
+      water: Math.floor((b.cost.water || 0) * 0.5),
+      wood: Math.floor((b.cost.wood || 0) * 0.5)
+    });
+    for (const u of game.units) {
+      if (u.hp <= 0) continue;
+      if (u.order && u.order.buildingId === b.id) setOrder(u, null);
+      else if (u.order && u.order.targetKind === "building" && u.order.targetId === b.id) u.order = null;
+    }
+  }
+  game.buildings = game.buildings.filter(b => !b.dead);
+  game.units = game.units.filter(u => u.hp > 0);
+  game.selUnits = game.selUnits.filter(uid => getUnit(uid));
+  if (game.selBuilding && !getBuilding(game.selBuilding)) game.selBuilding = null;
+  if (game.trainMaleId && !getUnit(game.trainMaleId)) game.trainMaleId = null;
+}
+
+function checkWinner() {
+  const playerTown = game.buildings.some(b => b.owner === "player" && b.kind === "town");
+  const aiTown = game.buildings.some(b => b.owner === "ai" && b.kind === "town");
+  if (!playerTown) finish("lose");
+  else if (!aiTown) finish("win");
+}
+function finish(result) {
+  if (game.over) return;
+  game.over = result;
+  game.running = false;
+  if (!ui.end) return;
+  ui.end.style.display = "block";
+  ui.endTitle.textContent = result === "win" ? "ชนะ" : "แพ้";
+  ui.endText.textContent = result === "win"
+    ? "ศูนย์กลางของศัตรูพังแล้ว เผ่า" + clanOf("player").name + "ได้ดินแดนนี้"
+    : "ศูนย์กลางของเราถูกทำลาย";
+}
+
+function resourceWant(owner, index) {
+  const stock = stockOf(owner);
+  const dojo = game.buildings.some(b => b.owner === owner && b.kind === "dojo");
+  if (!dojo) {
+    if (stock.rice < BUILDINGS.dojo.rice) return "rice";
+    if (stock.water < BUILDINGS.dojo.water) return "water";
+    return "rice";
+  }
+  if (stock.rice < 50) return "rice";
+  if (stock.water < 25) return "water";
+  return index % 3 === 2 ? "water" : "rice";
+}
+function assignGatherers(owner) {
+  const females = game.units.filter(u => u.owner === owner && u.role === "female");
+  females.forEach((f, index) => {
+    const want = resourceWant(owner, index);
+    const carrying = f.carryRice + f.carryWater > 0;
+    const current = f.order && (f.order.type === "gather" ? f.order.res : f.order.next && f.order.next.res);
+    if (!f.order || (!carrying && current !== want)) orderGather(f, want);
+  });
+}
+function aiThink() {
+  const owner = "ai";
+  const stock = stockOf(owner);
+  const females = game.units.filter(u => u.owner === owner && u.role === "female");
+  const males = game.units.filter(u => u.owner === owner && u.role === "male");
+  const army = game.units.filter(u => u.owner === owner && u.role === "soldier");
+  const tc = game.buildings.find(b => b.owner === owner && b.kind === "town" && b.done);
+  assignGatherers(owner);
+  assignWoodcutters(owner);
+  let dojo = game.buildings.find(b => b.owner === owner && b.kind === "dojo" && b.hp > 0);
+  if (!dojo && males.length && canAfford(owner, BUILDINGS.dojo)) {
+    const male = males.find(m => !m.order || m.order.type === "move" || m.order.type === "gather");
+    const tcPos = aiTownPos();
+    const spots = [[-150, 30], [-120, 120], [0, 140], [-180, -40]];
+    if (male) {
+      for (const [ox, oy] of spots) {
+        if (beginBuild(male, "dojo", tcPos.x + ox, tcPos.y + oy)) break;
+      }
+    }
+  }
+  dojo = game.buildings.find(b => b.owner === owner && b.kind === "dojo" && b.done && !b.training);
+  const chief = game.units.find(u => u.owner === owner && u.role === "chief");
+  if (chief && dojo && dojo.reservedBy !== chief.id && canAfford(owner, clanOf(owner).chief)) startTrainChief(dojo, chief);
+  dojo = game.buildings.find(b => b.owner === owner && b.kind === "dojo" && b.done && !b.training && !b.reservedBy);
+  if (dojo && army.length < 8 && popUsed(owner) < POP_CAP) {
+    const clan = clanOf(owner);
+    const male = nearestIdleMale(owner, dojo.x, dojo.y) || males.find(m => !m.order || m.order.type === "move");
+    if (male) {
+      const order = [army.length % clan.units.length, 0, 1, 2];
+      for (const idx of order) {
+        const def = clan.units[idx];
+        if (def && canAfford(owner, def)) { startTrainSoldier(dojo, male, def); break; }
+      }
+    }
+  }
+  const dojoDone = game.buildings.some(b => b.owner === owner && b.kind === "dojo" && b.done);
+  if (tc && dojoDone && !tc.training && stock.rice >= 100 && popUsed(owner) < POP_CAP) {
+    if (females.length < 5) startTrainPeasant(tc, true);
+    else if (males.length < 2 && canAfford(owner, PEASANT_COST.male)) startTrainPeasant(tc, false);
+  }
+  if (!game.aiAttack && (army.length >= 5 || (game.time > 150 && army.length >= 3))) game.aiAttack = true;
+  if (game.aiAttack) {
+    const dest = playerTownPos();
+    for (const s of army) {
+      const busy = s.order && (s.order.type === "attack" || s.order.type === "attackmove");
+      if (!busy) s.order = { type: "attackmove", x: dest.x, y: dest.y };
+    }
+  }
 }
 
 function update(dt) {
-  if (!game.running) return;
+  if (!game.running || game.over) return;
+  dt = Math.max(0, Math.min(dt, 0.05));
   game.time += dt;
-  game.units.forEach(u => {
-    if (u.target) {
-      const dx = u.target.x - u.x, dy = u.target.y - u.y, dist = Math.hypot(dx, dy);
-      if (dist > 5) {
-        u.x += (dx/dist) * u.speed * 60 * dt;
-        u.y += (dy/dist) * u.speed * 60 * dt;
-      } else if (u.isFemale) {
-        const nearRice = game.resources.find(r => r.type==="rice" && Math.hypot(r.x-u.x, r.y-u.y)<40);
-        if (nearRice && nearRice.amount > 0) { nearRice.amount -= 5; game.rice += 5; }
-        const nearWater = game.resources.find(r => r.type==="water" && Math.hypot(r.x-u.x, r.y-u.y)<40);
-        if (nearWater && nearWater.amount > 0) { nearWater.amount -= 3; game.water += 3; }
-        u.target = null;
-      }
+  for (const b of game.buildings) {
+    if (!b.training) continue;
+    b.training.t += dt;
+    if (b.training.t >= b.training.dur) spawnFromTraining(b);
+  }
+  for (const u of game.units) updateUnit(u, dt);
+  updateShots(dt);
+  separate(dt);
+  destroyBuildings();
+  checkWinner();
+  for (const f of game.floats) f.life -= dt;
+  game.floats = game.floats.filter(f => f.life > 0);
+  game.aiTimer -= dt;
+  if (game.aiTimer <= 0 && game.running) { game.aiTimer = 1; aiThink(); }
+  if (toastTimer > 0) {
+    toastTimer -= dt;
+    if (toastTimer <= 0 && ui.toast) ui.toast.style.display = "none";
+  }
+  game.hudTimer -= dt;
+  if (game.hudTimer <= 0) { game.hudTimer = 0.2; refreshHud(false); }
+}
+
+function refreshHud(force) {
+  if (!ui.rice) return;
+  ui.rice.textContent = Math.floor(game.stock.player.rice);
+  ui.water.textContent = Math.floor(game.stock.player.water);
+  if (ui.wood) ui.wood.textContent = Math.floor(game.stock.player.wood);
+  ui.pop.textContent = String(popUsed("player"));
+  ui.cap.textContent = String(POP_CAP);
+  const mins = Math.floor(game.time / 60);
+  const secs = Math.floor(game.time % 60);
+  ui.clock.textContent = mins + ":" + String(secs).padStart(2, "0");
+  const sig = uiSignature();
+  if (force || sig !== uiSig) {
+    uiSig = sig;
+    renderCommands();
+    renderStatus();
+  } else {
+    updateDisabled();
+  }
+}
+function uiSignature() {
+  const b = game.selBuilding ? getBuilding(game.selBuilding) : null;
+  return [
+    game.mode, game.placeKind || "", game.over || "",
+    game.selUnits.join("."),
+    b ? b.id + ":" + b.kind + ":" + (b.done ? 1 : 0) + ":" + (b.training ? 1 : 0) : "",
+    game.trainMaleId || ""
+  ].join("|");
+}
+function renderStatus() {
+  if (!ui.status) return;
+  if (game.mode === "place") {
+    ui.status.textContent = "แตะแผนที่เพื่อวาง" + BUILDINGS[game.placeKind].name + " · ลากเพื่อเลื่อนมุมมอง · กดยกเลิก";
+    return;
+  }
+  if (game.mode === "rally") { ui.status.textContent = "แตะจุดที่ต้องการให้หน่วยใหม่เดินไป"; return; }
+  const units = selectedUnits();
+  const b = game.selBuilding ? getBuilding(game.selBuilding) : null;
+  if (b) {
+    const prog = b.training ? " · กำลังฝึก " + Math.floor(b.training.t / b.training.dur * 100) + "%" : "";
+    const built = b.done ? "" : " · กำลังสร้าง " + Math.floor(b.progress * 100) + "%";
+    ui.status.textContent = b.name + "  พลังชีวิต " + Math.max(0, Math.ceil(b.hp)) + "/" + b.maxHp + built + prog;
+    return;
+  }
+  if (units.length === 1) {
+    const u = units[0];
+    const bits = [];
+    if (u.carryRice) bits.push("ข้าว " + u.carryRice);
+    if (u.carryWater) bits.push("น้ำ " + u.carryWater);
+    if (u.carryWood) bits.push("ไม้ " + u.carryWood);
+    const carry = bits.length ? " · ถือ" + bits.join(" ") : "";
+    const aura = u.leader ? " · ทหารใกล้ตัวโจมตีแรงขึ้น" : "";
+    const hint = u.role === "chief" ? " · ส่งเข้าหอฝึกเพื่อเป็นหัวหน้านักรบ" : "";
+    ui.status.textContent = u.name + "  พลังชีวิต " + Math.max(0, Math.ceil(u.hp)) + "/" + u.maxHp + carry + hint + aura;
+    return;
+  }
+  if (units.length > 1) { ui.status.textContent = "เลือก " + units.length + " หน่วย"; return; }
+  ui.status.textContent = game.aiAttack ? "ศัตรูกำลังบุก — เลือกทหารแล้วแตะศัตรู" : "แตะหน่วยเพื่อเลือก · ลากแผนที่เพื่อเลื่อนกล้อง";
+}
+function btn(act, arg, label, sub, cls) {
+  return '<button type="button" class="' + (cls || "") + '" data-act="' + act + '" data-arg="' + (arg || "") + '">' + label + (sub ? "<small>" + sub + "</small>" : "") + "</button>";
+}
+function renderCommands() {
+  if (!ui.commands) return;
+  const parts = [
+    btn("all-rice", "", "ข้าวทั้งหมด", "", "primary"),
+    btn("all-water", "", "น้ำทั้งหมด"),
+    btn("all-wood", "", "ไม้ทั้งหมด", "", "wood"),
+    btn("sel-chief", "", "หัวหน้า"),
+    btn("sel-army", "", "เลือกทหาร"),
+    btn("camera-base", "", "ดูฐาน"),
+    btn("help", "", "วิธีเล่น")
+  ];
+  if (game.mode === "place" || game.mode === "rally") {
+    parts.push(btn("cancel", "", "ยกเลิก", "", "warn"));
+    ui.commands.innerHTML = parts.join("");
+    return;
+  }
+  const b = game.selBuilding ? getBuilding(game.selBuilding) : null;
+  const units = selectedUnits();
+  if (b && b.owner === "player") {
+    if (b.kind === "town" && b.done) {
+      parts.push(btn("train-f", "", "ฝึกชาวนา", "ข้าว 40"));
+      parts.push(btn("train-m", "", "ฝึกชาย", "ข้าว 35 น้ำ 10"));
+      parts.push(btn("rally", "", "จุดรวม"));
+    } else if (b.kind === "dojo" && b.done) {
+      const clan = clanOf("player");
+      const chiefAlive = game.units.some(u => u.owner === "player" && u.role === "chief");
+      if (chiefAlive) parts.push(btn("train-chief", "", "ฝึกหัวหน้า", costText(clan.chief), "primary"));
+      for (const def of clan.units) parts.push(btn("train-s", def.id, def.name, "ข้าว " + def.rice + " น้ำ " + def.water));
+      parts.push(btn("rally", "", "จุดรวม"));
+    } else if (!b.done) {
+      parts.push(btn("resume-build", "", "ส่งชายไปสร้าง"));
     }
+  } else if (units.length && units.every(u => u.owner === "player")) {
+    const roles = new Set(units.map(u => u.role));
+    if (roles.size === 1 && roles.has("female")) {
+      parts.push(btn("gather", "rice", "เก็บข้าว"));
+      parts.push(btn("gather", "water", "หาน้ำ"));
+      parts.push(btn("stop", "", "หยุด", "", "warn"));
+    } else if (roles.size === 1 && (roles.has("male") || roles.has("chief"))) {
+      if (roles.has("chief")) parts.push(btn("train-chief", "", "ฝึกเป็นหัวหน้านักรบ", costText(clanOf("player").chief), "primary"));
+      parts.push(btn("chop", "", "ตัดไม้", "", "wood"));
+      parts.push(btn("place", "dojo", "สร้างหอฝึก", costText(BUILDINGS.dojo)));
+      parts.push(btn("place", "granary", "สร้างยุ้ง", costText(BUILDINGS.granary)));
+      parts.push(btn("place", "well", "สร้างบ่อ", costText(BUILDINGS.well)));
+      parts.push(btn("stop", "", "หยุด", "", "warn"));
+    } else if (roles.has("soldier")) {
+      parts.push(btn("stop", "", "หยุด", "", "warn"));
+    }
+  }
+  ui.commands.innerHTML = parts.join("");
+  updateDisabled();
+}
+function updateDisabled() {
+  if (!ui.commands) return;
+  const buttons = ui.commands.querySelectorAll("button");
+  buttons.forEach(button => {
+    const act = button.dataset.act;
+    const arg = button.dataset.arg;
+    let off = false;
+    if (act === "train-f") off = !canAfford("player", PEASANT_COST.female) || popUsed("player") >= POP_CAP;
+    if (act === "train-m") off = !canAfford("player", PEASANT_COST.male) || popUsed("player") >= POP_CAP;
+    if (act === "train-s") {
+      const def = clanOf("player").units.find(u => u.id === arg);
+      off = !def || !canAfford("player", def) || popUsed("player") >= POP_CAP;
+    }
+    if (act === "train-chief") {
+      const chief = game.units.find(u => u.owner === "player" && u.role === "chief");
+      off = !chief || !canAfford("player", clanOf("player").chief);
+    }
+    if (act === "place") off = !canAfford("player", BUILDINGS[arg]);
+    button.disabled = off;
   });
-  document.getElementById("rice").textContent = Math.floor(game.rice);
-  document.getElementById("water").textContent = Math.floor(game.water);
-  document.getElementById("pop").textContent = game.units.filter(u => u.owner==="player").length;
-  const mins = Math.floor(game.time/60), secs = Math.floor(game.time%60);
-  document.getElementById("time").textContent = mins + ":" + secs.toString().padStart(2,"0");
+}
+
+function onCommand(act, arg) {
+  if (!game.running && act !== "help") return;
+  if (act === "help") { if (ui.help) ui.help.style.display = "block"; return; }
+  if (act === "all-rice") { orderAllFemales("rice"); return; }
+  if (act === "all-water") { orderAllFemales("water"); return; }
+  if (act === "all-wood") { orderAllMalesChop(); return; }
+  if (act === "sel-chief") {
+    const chief = game.units.find(u => u.owner === "player" && u.role === "chief")
+      || game.units.find(u => u.owner === "player" && u.leader);
+    if (!chief) { toast("หัวหน้าไม่อยู่แล้ว"); return; }
+    selectUnits([chief]);
+    focusCam(chief.x, chief.y);
+    refreshHud(true);
+    return;
+  }
+  if (act === "sel-army") {
+    const army = game.units.filter(u => u.owner === "player" && u.role === "soldier");
+    if (!army.length) { toast("ยังไม่มีทหาร ฝึกที่หอฝึกก่อน"); return; }
+    selectUnits(army);
+    refreshHud(true);
+    return;
+  }
+  if (act === "camera-base") { const p = playerTownPos(); focusCam(p.x, p.y); return; }
+  if (act === "cancel") { game.mode = "play"; game.placeKind = null; refreshHud(true); return; }
+  if (act === "stop") { for (const u of selectedUnits()) setOrder(u, null); return; }
+  if (act === "gather") { for (const u of selectedUnits()) if (u.role === "female") orderGather(u, arg); return; }
+  if (act === "chop") { for (const u of selectedUnits()) orderChop(u); return; }
+  if (act === "train-chief") {
+    const chief = selectedUnits().find(u => u.role === "chief") || game.units.find(u => u.owner === "player" && u.role === "chief");
+    let dojo = getBuilding(game.selBuilding);
+    if (!dojo || dojo.kind !== "dojo" || !dojo.done) {
+      dojo = game.buildings.find(b => b.owner === "player" && b.kind === "dojo" && b.done && !b.training);
+    }
+    if (!dojo) { toast("สร้างหอฝึกให้เสร็จก่อน"); return; }
+    startTrainChief(dojo, chief);
+    refreshHud(true);
+    return;
+  }
+  if (act === "place") {
+    const male = selectedUnits().find(isLaborer);
+    if (!male) { toast("เลือกชาวบ้านชายหรือหัวหน้าก่อน"); return; }
+    game.mode = "place";
+    game.placeKind = arg;
+    refreshHud(true);
+    return;
+  }
+  if (act === "train-f" || act === "train-m") {
+    const b = getBuilding(game.selBuilding);
+    startTrainPeasant(b, act === "train-f");
+    refreshHud(true);
+    return;
+  }
+  if (act === "train-s") {
+    const b = getBuilding(game.selBuilding);
+    const def = clanOf("player").units.find(u => u.id === arg);
+    let male = game.trainMaleId ? getUnit(game.trainMaleId) : null;
+    if (!male || male.role !== "male") male = nearestIdleMale("player", b ? b.x : 0, b ? b.y : 0);
+    if (def && b) startTrainSoldier(b, male, def);
+    refreshHud(true);
+    return;
+  }
+  if (act === "rally") { game.mode = "rally"; game.rallyFor = game.selBuilding; refreshHud(true); return; }
+  if (act === "resume-build") {
+    const b = getBuilding(game.selBuilding);
+    const male = nearestIdleMale("player", b ? b.x : 0, b ? b.y : 0);
+    if (!b || !male) { toast("ไม่มีชาวบ้านชายว่าง"); return; }
+    setOrder(male, { type: "build", buildingId: b.id });
+    toast("ชายกำลังไปสร้างต่อ");
+  }
+}
+
+function onWorldTap(x, y) {
+  if (!game.running) return;
+  if (game.mode === "place") {
+    const male = selectedUnits().find(isLaborer) || nearestIdleMale("player", x, y);
+    beginBuild(male, game.placeKind, x, y);
+    refreshHud(true);
+    return;
+  }
+  if (game.mode === "rally") {
+    const b = getBuilding(game.rallyFor);
+    if (b && b.owner === "player") { b.rally = { x, y }; toast("ตั้งจุดรวมแล้ว"); }
+    game.mode = "play";
+    refreshHud(true);
+    return;
+  }
+  const own = unitAt(x, y, "player");
+  const enemy = unitAt(x, y, "ai");
+  const building = buildingAt(x, y);
+  const node = game.nodes.find(n => n.amount > 0 && Math.hypot(n.x - x, n.y - y) < 24);
+  const selected = selectedUnits().filter(u => u.owner === "player");
+
+  if (selected.length && enemy) {
+    for (const u of selected) if (u.atk > 0) setOrder(u, { type: "attack", targetKind: "unit", targetId: enemy.id });
+    return;
+  }
+  if (selected.some(u => u.role === "soldier") && building && building.owner === "ai") {
+    for (const u of selected) if (u.role === "soldier") setOrder(u, { type: "attack", targetKind: "building", targetId: building.id });
+    return;
+  }
+  if (selected.some(isLaborer) && building && building.owner === "player" && !building.done) {
+    for (const u of selected) if (isLaborer(u)) setOrder(u, { type: "build", buildingId: building.id });
+    return;
+  }
+  if (selected.some(u => u.role === "chief") && building && building.owner === "player" && building.kind === "dojo" && building.done) {
+    startTrainChief(building, selected.find(u => u.role === "chief"));
+    refreshHud(true);
+    return;
+  }
+  if (selected.some(u => u.role === "male") && building && building.owner === "player" && building.kind === "dojo" && building.done) {
+    const male = selected.find(u => u.role === "male");
+    game.trainMaleId = male.id;
+    game.selUnits = [];
+    game.selBuilding = building.id;
+    game.mode = "play";
+    refreshHud(true);
+    toast("เลือกหน่วยที่จะฝึก");
+    return;
+  }
+  const tree = treeAt(x, y);
+  if (selected.some(isLaborer) && tree) {
+    for (const u of selected) if (isLaborer(u)) orderChop(u, tree.id);
+    return;
+  }
+  if (selected.some(u => u.role === "female") && node) {
+    for (const u of selected) if (u.role === "female") orderGather(u, node.type, node.id);
+    return;
+  }
+  if (own) { selectUnits([own]); refreshHud(true); return; }
+  if (building && building.owner === "player") {
+    clearSelection();
+    game.selBuilding = building.id;
+    refreshHud(true);
+    return;
+  }
+  if (selected.length) {
+    selected.forEach((u, i) => {
+      const ang = selected.length === 1 ? 0 : (i / selected.length) * Math.PI * 2;
+      const rad = selected.length === 1 ? 0 : 18;
+      const tx = x + Math.cos(ang) * rad;
+      const ty = y + Math.sin(ang) * rad;
+      if (u.role === "soldier") setOrder(u, { type: "attackmove", x: tx, y: ty });
+      else setOrder(u, { type: "move", x: tx, y: ty });
+    });
+    return;
+  }
+  if (enemy) toast("เลือกทหารก่อน แล้วค่อยแตะศัตรู");
+}
+
+function minimapRect() { return { x: Math.max(8, W - 156), y: 58, w: 148, h: 98 }; }
+function onScreenTap(sx, sy) {
+  const mm = minimapRect();
+  if (sx >= mm.x && sx <= mm.x + mm.w && sy >= mm.y && sy <= mm.y + mm.h) {
+    const wx = (sx - mm.x) / mm.w * MAP_W;
+    const wy = (sy - mm.y) / mm.h * MAP_H;
+    focusCam(wx, wy);
+    return;
+  }
+  const w = screenToWorld(sx, sy);
+  onWorldTap(w.x, w.y);
 }
 
 function draw() {
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle = "#3a5f2a";
-  ctx.fillRect(0,0,W,H);
-  game.resources.forEach(r => {
-    ctx.fillStyle = r.type === "rice" ? "#f1c40f" : "#3498db";
-    ctx.beginPath(); ctx.arc(r.x, r.y, 18, 0, Math.PI*2); ctx.fill();
-  });
-  game.buildings.forEach(b => {
-    ctx.fillStyle = b.owner === "player" ? "#27ae60" : "#e74c3c";
-    ctx.fillRect(b.x-25, b.y-25, 50, 50);
-  });
-  game.units.forEach(u => {
-    ctx.fillStyle = u.owner === "player" ? game.playerClan.color : "#95a5a6";
-    ctx.beginPath(); ctx.arc(u.x, u.y, u.isFemale ? 8 : 10, 0, Math.PI*2); ctx.fill();
-  });
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = "#14210f";
+  ctx.fillRect(0, 0, W, H);
+  if (!game.playerKey) {
+    ctx.fillStyle = "#1e3318";
+    ctx.fillRect(0, 0, W, H);
+    return;
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, -cam.x * dpr, -cam.y * dpr);
+  drawWorld();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawMinimap();
+  if (game.mode === "place" && game.placeKind) drawPlaceHint();
 }
 
+function drawWorld() {
+  ctx.fillStyle = "#335c28";
+  ctx.fillRect(0, 0, MAP_W, MAP_H);
+  ctx.fillStyle = "#3f6e30";
+  ctx.fillRect(180, MAP_H - 560, 620, 460);
+  ctx.fillRect(MAP_W - 820, 80, 640, 460);
+  ctx.fillStyle = "#2a6a78";
+  ctx.beginPath();
+  ctx.moveTo(0, 760);
+  for (let x = 0; x <= MAP_W; x += 80) ctx.lineTo(x, 760 + Math.sin(x * 0.01) * 36);
+  ctx.lineTo(MAP_W, 860);
+  for (let x = MAP_W; x >= 0; x -= 80) ctx.lineTo(x, 860 + Math.sin(x * 0.01) * 36);
+  ctx.fill();
+  for (const t of game.trees) drawTree(t);
+  for (const n of game.nodes) drawNode(n);
+  for (const b of game.buildings) drawBuilding(b);
+  for (const s of game.shots) {
+    ctx.fillStyle = "#f7e28a";
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  for (const u of game.units) drawUnit(u);
+  for (const f of game.floats) {
+    ctx.globalAlpha = Math.max(0, f.life);
+    ctx.fillStyle = "#fff";
+    ctx.font = "12px Tahoma";
+    ctx.fillText(f.text, f.x - 6, f.y);
+    ctx.globalAlpha = 1;
+  }
+  if (game.mode === "place" && pointer.world) {
+    const ok = placeValid(game.placeKind, pointer.world.x, pointer.world.y);
+    ctx.strokeStyle = ok ? "#7dff9a" : "#ff6b6b";
+    ctx.lineWidth = 2;
+    const def = BUILDINGS[game.placeKind];
+    ctx.strokeRect(pointer.world.x - def.w / 2, pointer.world.y - def.h / 2, def.w, def.h);
+  }
+}
+
+function drawTree(t) {
+  if (t.wood <= 0) {
+    ctx.fillStyle = "#6b4a2a";
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+  const scale = 0.55 + 0.45 * (t.wood / t.max);
+  ctx.fillStyle = "#6b3e22";
+  ctx.fillRect(t.x - 2, t.y, 4, 7 + t.r * 0.25);
+  ctx.fillStyle = "#1f4d22";
+  ctx.beginPath();
+  ctx.arc(t.x, t.y - 2, t.r * scale, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#d7b56d";
+  ctx.font = "10px Tahoma";
+  ctx.textAlign = "center";
+  ctx.fillText("ไม้", t.x, t.y + 3);
+}
+function drawNode(n) {
+  if (n.amount <= 0) return;
+  if (n.type === "rice") {
+    ctx.fillStyle = "#c9a227";
+    ctx.fillRect(n.x - 16, n.y - 8, 32, 18);
+    ctx.strokeStyle = "#f8e38a";
+    ctx.beginPath();
+    for (let i = -2; i <= 2; i++) {
+      ctx.moveTo(n.x + i * 6, n.y + 8);
+      ctx.lineTo(n.x + i * 6, n.y - 12);
+    }
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = "#3aa0d8";
+    ctx.beginPath();
+    ctx.ellipse(n.x, n.y, 18, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#111";
+  ctx.font = "11px Tahoma";
+  ctx.fillText(n.type === "rice" ? "ข้าว" : "น้ำ", n.x - 10, n.y + 4);
+}
+
+function drawBuilding(b) {
+  const color = clanOf(b.owner).color;
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  ctx.fillStyle = "rgba(0,0,0,.25)";
+  ctx.beginPath();
+  ctx.ellipse(0, 16, b.w * 0.38, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (b.kind === "town") {
+    ctx.fillStyle = "#6d5130";
+    ctx.fillRect(-b.w / 2, -8, b.w, b.h / 2 + 8);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(-b.w / 2 - 6, -8);
+    ctx.lineTo(0, -b.h / 2 - 8);
+    ctx.lineTo(b.w / 2 + 6, -8);
+    ctx.fill();
+  } else if (b.kind === "dojo") {
+    ctx.fillStyle = "#d9d3c5";
+    ctx.fillRect(-b.w / 2, -6, b.w, b.h / 2);
+    ctx.fillStyle = color;
+    ctx.fillRect(-b.w / 2 + 6, -b.h / 2 + 4, b.w - 12, 16);
+    ctx.fillRect(-10, -b.h / 2 - 6, 20, 12);
+  } else if (b.kind === "well") {
+    ctx.fillStyle = "#8d8d8d";
+    ctx.beginPath();
+    ctx.arc(0, 0, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#3aa0d8";
+    ctx.beginPath();
+    ctx.arc(0, 0, 8, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.fillStyle = "#a9743a";
+    ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+    ctx.fillStyle = "#d7b56d";
+    ctx.fillRect(-b.w / 2, -b.h / 2, b.w, 8);
+  }
+  ctx.restore();
+  if (!b.done || b.hp < b.maxHp) {
+    const y = b.y - b.h / 2 - 10;
+    ctx.fillStyle = "#111";
+    ctx.fillRect(b.x - 22, y, 44, 5);
+    ctx.fillStyle = b.done ? "#e74c3c" : "#f1c40f";
+    ctx.fillRect(b.x - 22, y, 44 * Math.max(0, b.hp / b.maxHp), 5);
+  }
+  if (game.selBuilding === b.id) {
+    ctx.strokeStyle = "#f6d365";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(b.x - b.w / 2 - 4, b.y - b.h / 2 - 4, b.w + 8, b.h + 8);
+  }
+  if (b.training) {
+    ctx.fillStyle = "#fff";
+    ctx.font = "11px Tahoma";
+    ctx.fillText("ฝึก " + Math.floor(b.training.t / b.training.dur * 100) + "%", b.x - 18, b.y + 4);
+  }
+}
+
+function drawUnit(u) {
+  const color = u.owner === "player" ? clanOf("player").color : "#b0b6b8";
+  ctx.save();
+  ctx.translate(u.x, u.y);
+  ctx.fillStyle = "rgba(0,0,0,.3)";
+  ctx.beginPath();
+  ctx.ellipse(0, u.radius, u.radius, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (u.unitId === "elephant") {
+    ctx.fillStyle = "#8e8e8e";
+    ctx.beginPath();
+    ctx.ellipse(0, 2, 16, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.fillRect(-4, -12, 8, 8);
+  } else {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(0, 0, u.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#f3d2b5";
+    ctx.beginPath();
+    ctx.arc(0, -u.radius * 0.15, u.role === "female" ? 3.5 : 4, 0, Math.PI * 2);
+    ctx.fill();
+    if (u.role === "soldier") {
+      ctx.strokeStyle = u.leader ? "#f6d365" : "#f4f1ea";
+      ctx.lineWidth = u.leader ? 3 : 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(u.facing) * (u.radius + 8), Math.sin(u.facing) * (u.radius + 8));
+      ctx.stroke();
+      if (u.leader) {
+        ctx.fillStyle = "#f6d365";
+        ctx.font = "bold 11px Tahoma";
+        ctx.textAlign = "center";
+        ctx.fillText("ผ", 0, 4);
+      }
+    } else {
+      ctx.fillStyle = u.role === "chief" ? "#f6d365" : "#fff";
+      ctx.font = "bold 11px Tahoma";
+      ctx.textAlign = "center";
+      const mark = u.role === "female" ? "ญ" : u.role === "chief" ? "ห" : "ช";
+      ctx.fillText(mark, 0, 4);
+    }
+  }
+  ctx.restore();
+  if (u.carryRice > 0 || u.carryWater > 0 || u.carryWood > 0) {
+    ctx.fillStyle = u.carryWood > 0 ? "#a9743a" : u.carryRice > 0 ? "#f1c40f" : "#5dade2";
+    ctx.fillRect(u.x + 6, u.y - 10, 5, 5);
+  }
+  if (game.selUnits.includes(u.id) || u.hp < u.maxHp) {
+    ctx.fillStyle = "#111";
+    ctx.fillRect(u.x - 10, u.y - u.radius - 8, 20, 3);
+    ctx.fillStyle = "#2ecc71";
+    ctx.fillRect(u.x - 10, u.y - u.radius - 8, 20 * Math.max(0, u.hp / u.maxHp), 3);
+  }
+  if (u.role === "chief" || u.leader) {
+    ctx.strokeStyle = "#f6d365";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(u.x, u.y, u.radius + 6, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  if (game.selUnits.includes(u.id)) {
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(u.x, u.y, u.radius + 9, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+function drawMinimap() {
+  const mm = minimapRect();
+  ctx.fillStyle = "rgba(0,0,0,.55)";
+  ctx.fillRect(mm.x, mm.y, mm.w, mm.h);
+  ctx.strokeStyle = "rgba(255,255,255,.3)";
+  ctx.strokeRect(mm.x, mm.y, mm.w, mm.h);
+  const sx = mm.w / MAP_W, sy = mm.h / MAP_H;
+  for (const t of game.trees) {
+    if (t.wood <= 0) continue;
+    ctx.fillStyle = "#14331c";
+    ctx.fillRect(mm.x + t.x * sx, mm.y + t.y * sy, 2, 2);
+  }
+  for (const n of game.nodes) {
+    if (n.amount <= 0) continue;
+    ctx.fillStyle = n.type === "rice" ? "#f1c40f" : "#3498db";
+    ctx.fillRect(mm.x + n.x * sx, mm.y + n.y * sy, 3, 3);
+  }
+  for (const b of game.buildings) {
+    ctx.fillStyle = b.owner === "player" ? "#2ecc71" : "#e74c3c";
+    ctx.fillRect(mm.x + b.x * sx - 2, mm.y + b.y * sy - 2, 4, 4);
+  }
+  ctx.strokeStyle = "#fff";
+  ctx.strokeRect(mm.x + cam.x * sx, mm.y + cam.y * sy, Math.max(8, W * sx), Math.max(6, H * sy));
+}
+
+function drawPlaceHint() {}
+
+const pointer = { world: null, active: new Map() };
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+canvas.addEventListener("pointerdown", e => {
+  if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
+  pointer.active.set(e.pointerId, { x: e.clientX, y: e.clientY, ox: e.clientX, oy: e.clientY, moved: false });
+});
+canvas.addEventListener("pointermove", e => {
+  const p = pointer.active.get(e.pointerId);
+  const rect = canvas.getBoundingClientRect();
+  pointer.world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+  if (!p) return;
+  if (Math.hypot(e.clientX - p.ox, e.clientY - p.oy) > 12) p.moved = true;
+  if (p.moved && game.playerKey) {
+    cam.x -= e.clientX - p.x;
+    cam.y -= e.clientY - p.y;
+    clampCam();
+  }
+  p.x = e.clientX;
+  p.y = e.clientY;
+});
+canvas.addEventListener("pointerup", e => {
+  const p = pointer.active.get(e.pointerId);
+  pointer.active.delete(e.pointerId);
+  if (!p || p.moved || !game.playerKey) return;
+  const rect = canvas.getBoundingClientRect();
+  onScreenTap(e.clientX - rect.left, e.clientY - rect.top);
+});
+canvas.addEventListener("pointercancel", e => pointer.active.delete(e.pointerId));
+
+if (ui.commands) ui.commands.addEventListener("click", e => {
+  const button = e.target.closest("button");
+  if (!button || button.disabled) return;
+  onCommand(button.dataset.act, button.dataset.arg);
+});
+document.getElementById("helpClose").addEventListener("click", () => { ui.help.style.display = "none"; });
+document.getElementById("replay").addEventListener("click", () => startGame(game.playerKey, game.aiKey));
+document.getElementById("reselect").addEventListener("click", () => {
+  game.running = false;
+  game.over = null;
+  game.playerKey = null;
+  ui.end.style.display = "none";
+  ui.topbar.style.display = "none";
+  ui.dock.style.display = "none";
+  ui.clanSelect.style.display = "block";
+});
+
+function buildClanMenu() {
+  ui.clanGrid.innerHTML = Object.keys(CLANS).map(key => {
+    const c = CLANS[key];
+    return '<button type="button" class="clan-btn" data-clan="' + key + '" style="background:' + c.color + '"><b>เผ่า' + c.name + '</b><span>' + c.region + ' · ' + c.bonus + '</span></button>';
+  }).join("");
+  ui.clanGrid.querySelectorAll(".clan-btn").forEach(button => {
+    button.addEventListener("click", () => startGame(button.dataset.clan));
+  });
+}
+buildClanMenu();
+
 function loop(ts) {
-  const dt = Math.min((ts - (loop.last||ts))/1000, 0.05);
+  const dt = Math.min((ts - (loop.last || ts)) / 1000, 0.05);
   loop.last = ts;
-  update(dt); draw();
+  update(dt);
+  draw();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
-canvas.addEventListener("pointerdown", e => {
-  if (!game.running) return;
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left, y = e.clientY - rect.top;
-  let clicked = game.units.find(u => u.owner==="player" && Math.hypot(u.x-x, u.y-y)<15);
-  if (clicked) game.selected = clicked;
-  else if (game.selected) game.selected.target = {x, y};
-});
-
-document.querySelectorAll(".clan-btn").forEach(btn => {
-  btn.addEventListener("click", () => startGame(btn.dataset.clan));
-});
+globalThis.NBR = {
+  startGame, update, onCommand, onWorldTap, onScreenTap,
+  game, cam, CLANS, BUILDINGS,
+  focusCam, popUsed
+};
 </script>
 </body>
 </html>
