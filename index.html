@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>New Battle Realms - Prototype</title>
+<style>
+body { margin:0; background:#1a1a1a; color:#fff; font-family:Arial,sans-serif; overflow:hidden; touch-action:none; }
+#gameCanvas { display:block; background:#2d5016; }
+#ui { position:absolute; top:0; left:0; right:0; pointer-events:none; }
+.panel { background:rgba(0,0,0,0.7); padding:8px; margin:5px; border-radius:6px; pointer-events:auto; }
+#resources { position:absolute; top:5px; left:5px; }
+#clanSelect { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+button { padding:12px 20px; margin:5px; font-size:16px; cursor:pointer; }
+.clan-btn { min-width:140px; }
+#info { position:absolute; bottom:5px; left:5px; font-size:14px; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="ui">
+  <div id="clanSelect" class="panel">
+    <h2>เลือกเผ่า</h2>
+    <button class="clan-btn" data-clan="dragon">เผ่ามังกร (จีน)</button>
+    <button class="clan-btn" data-clan="tiger">เผ่าเสือ (เกาหลี)</button>
+    <button class="clan-btn" data-clan="eagle">เผ่านกอินทรีย์ (ญี่ปุ่น)</button>
+    <button class="clan-btn" data-clan="elephant">เผ่าช้าง (ไทย)</button>
+    <p>Prototype v0.1 - เล่นบน Chrome มือถือได้</p>
+  </div>
+  <div id="resources" class="panel" style="display:none;">
+    <div>ข้าว: <span id="rice">0</span> | น้ำ: <span id="water">0</span></div>
+    <div>ประชากร: <span id="pop">0</span></div>
+    <div>เวลา: <span id="time">0:00</span></div>
+  </div>
+  <div id="info" class="panel" style="display:none;">
+    แตะชาวบ้านชาย → เลือกอาคารฝึก | แตะชาวบ้านหญิง → ไปนา/น้ำ
+  </div>
+</div>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+const clans = {
+  dragon: { name: "มังกร", color: "#c0392b" },
+  tiger: { name: "เสือ", color: "#2980b9" },
+  eagle: { name: "นกอินทรีย์", color: "#27ae60" },
+  elephant: { name: "ช้าง", color: "#8e44ad" }
+};
+
+let game = { running: false, playerClan: null, rice: 100, water: 50, units: [], buildings: [], resources: [], time: 0, selected: null };
+
+function startGame(clanKey) {
+  game.playerClan = clans[clanKey];
+  game.running = true;
+  document.getElementById("clanSelect").style.display = "none";
+  document.getElementById("resources").style.display = "block";
+  document.getElementById("info").style.display = "block";
+  for (let i = 0; i < 3; i++) {
+    game.units.push(createVillager(true, 100 + i*30, 200));
+    game.units.push(createVillager(false, 100 + i*30, 250));
+  }
+  game.resources.push({x: 300, y: 150, type: "rice", amount: 500});
+  game.resources.push({x: 400, y: 300, type: "water", amount: 300});
+  game.buildings.push({x: 150, y: 180, type: "town", owner: "player", hp: 500});
+  game.buildings.push({x: W-200, y: H-200, type: "town", owner: "ai", hp: 500});
+}
+
+function createVillager(isFemale, x, y, owner = "player") {
+  return { x, y, owner, isFemale, hp: 50, speed: isFemale ? 1.2 : 1.5, target: null };
+}
+
+function update(dt) {
+  if (!game.running) return;
+  game.time += dt;
+  game.units.forEach(u => {
+    if (u.target) {
+      const dx = u.target.x - u.x, dy = u.target.y - u.y, dist = Math.hypot(dx, dy);
+      if (dist > 5) {
+        u.x += (dx/dist) * u.speed * 60 * dt;
+        u.y += (dy/dist) * u.speed * 60 * dt;
+      } else if (u.isFemale) {
+        const nearRice = game.resources.find(r => r.type==="rice" && Math.hypot(r.x-u.x, r.y-u.y)<40);
+        if (nearRice && nearRice.amount > 0) { nearRice.amount -= 5; game.rice += 5; }
+        const nearWater = game.resources.find(r => r.type==="water" && Math.hypot(r.x-u.x, r.y-u.y)<40);
+        if (nearWater && nearWater.amount > 0) { nearWater.amount -= 3; game.water += 3; }
+        u.target = null;
+      }
+    }
+  });
+  document.getElementById("rice").textContent = Math.floor(game.rice);
+  document.getElementById("water").textContent = Math.floor(game.water);
+  document.getElementById("pop").textContent = game.units.filter(u => u.owner==="player").length;
+  const mins = Math.floor(game.time/60), secs = Math.floor(game.time%60);
+  document.getElementById("time").textContent = mins + ":" + secs.toString().padStart(2,"0");
+}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = "#3a5f2a";
+  ctx.fillRect(0,0,W,H);
+  game.resources.forEach(r => {
+    ctx.fillStyle = r.type === "rice" ? "#f1c40f" : "#3498db";
+    ctx.beginPath(); ctx.arc(r.x, r.y, 18, 0, Math.PI*2); ctx.fill();
+  });
+  game.buildings.forEach(b => {
+    ctx.fillStyle = b.owner === "player" ? "#27ae60" : "#e74c3c";
+    ctx.fillRect(b.x-25, b.y-25, 50, 50);
+  });
+  game.units.forEach(u => {
+    ctx.fillStyle = u.owner === "player" ? game.playerClan.color : "#95a5a6";
+    ctx.beginPath(); ctx.arc(u.x, u.y, u.isFemale ? 8 : 10, 0, Math.PI*2); ctx.fill();
+  });
+}
+
+function loop(ts) {
+  const dt = Math.min((ts - (loop.last||ts))/1000, 0.05);
+  loop.last = ts;
+  update(dt); draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+canvas.addEventListener("pointerdown", e => {
+  if (!game.running) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  let clicked = game.units.find(u => u.owner==="player" && Math.hypot(u.x-x, u.y-y)<15);
+  if (clicked) game.selected = clicked;
+  else if (game.selected) game.selected.target = {x, y};
+});
+
+document.querySelectorAll(".clan-btn").forEach(btn => {
+  btn.addEventListener("click", () => startGame(btn.dataset.clan));
+});
+</script>
+</body>
+</html>
